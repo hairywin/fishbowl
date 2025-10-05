@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Fishbowl Scorekeeper 🐟🎭</title>
+<style>
+  :root{
+    --bg1:#0ea5e9; --bg2:#8b5cf6; --card:#0b1020ee; --ink:#eef2ff; --muted:#a5b4fc;
+    --accent:#22d3ee; --good:#34d399; --bad:#f87171; --ring:#ffffff22; --shadow: 0 10px 30px #0006;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; color:var(--ink); font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    background: linear-gradient(160deg,var(--bg1),var(--bg2)) fixed; overflow-x:hidden;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) calc(16px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
+  }
+  .wrap{max-width:960px; margin:0 auto; padding:16px}
+  header{
+    display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px;
+  }
+  .title{
+    display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.2px;
+    font-size: clamp(20px, 5vw, 28px);
+  }
+  .emoji-splash{filter:drop-shadow(0 6px 10px #0005)}
+  .toolbar{display:flex; gap:8px; align-items:center}
+  button, .chip{
+    -webkit-tap-highlight-color: transparent;
+    border:1px solid transparent; background:var(--card); color:var(--ink);
+    padding:10px 12px; border-radius:14px; box-shadow: var(--shadow);
+    outline:none; cursor:pointer; font-weight:700; letter-spacing:.2px;
+  }
+  button:active{transform:translateY(1px)}
+  .ghost{background:transparent; border-color:#ffffff33}
+  .danger{background:#2b0f12; border-color:#000; color:#fecaca}
+  .success{background:#0f2b1f; border-color:#000; color:#bbf7d0}
+  .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+  .rounds{display:flex; gap:8px; flex-wrap:wrap}
+  .chip{
+    padding:8px 12px; font-weight:800; box-shadow:none; border:1px solid #ffffff2a; background:#00000022;
+  }
+  .chip.active{background:var(--accent); color:#001018}
+  .panel{
+    background: linear-gradient(180deg, #0b1020cc, #0b1020f2);
+    border:1px solid var(--ring); border-radius:20px; box-shadow: var(--shadow);
+    padding:12px;
+  }
+  .grid{
+    display:grid; gap:12px; margin-top:12px;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 880px){
+    .layout{display:grid; grid-template-columns: 1.2fr .8fr; gap:14px; align-items:start}
+    .grid{grid-template-columns: repeat(2,minmax(0,1fr))}
+  }
+  .add{
+    display:flex; gap:8px; padding:10px; background:#00000020; border-radius:14px; border:1px dashed #ffffff33;
+  }
+  input[type="text"], input[type="number"]{
+    width:100%; padding:12px 14px; border-radius:12px; border:1px solid #ffffff33; background:#0b1020; color:var(--ink);
+    outline:none; font-weight:700;
+  }
+  .team{
+    border-radius:18px; padding:12px; border:1px solid var(--ring); background:#101735;
+    position:relative; overflow:hidden;
+  }
+  .team:before{
+    content:"🎭"; position:absolute; font-size:56px; opacity:.06; right:-6px; top:-10px; transform:rotate(-18deg)
+  }
+  .team-head{
+    display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px;
+  }
+  .name{
+    font-size:18px; font-weight:800; letter-spacing:.2px; display:flex; align-items:center; gap:8px;
+  }
+  .name[contenteditable="true"]{outline:2px dashed #ffffff33; outline-offset:4px; border-radius:8px; padding:2px 6px}
+  .score{
+    font-weight:900; font-size: clamp(32px, 8vw, 40px); line-height:1; letter-spacing:.5px;
+    display:flex; align-items:flex-end; gap:8px;
+  }
+  .controls{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+  .controls button{flex:1 1 70px}
+  .controls .tiny{flex:0 0 auto; padding:8px 10px; font-weight:800}
+  .badge{font-size:12px; color:var(--muted)}
+  .leader{
+    position:sticky; top:8px;
+  }
+  .lb-title{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px}
+  .lb-list{display:flex; flex-direction:column; gap:8px}
+  .lb-item{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    background:#101735; border:1px solid var(--ring); border-radius:14px; padding:12px;
+  }
+  .rank{font-weight:900; min-width:2.4ch; text-align:center}
+  .medal{font-size:20px}
+  .tiny-note{font-size:12px; color:#c7d2fe}
+  .floating-emojis{
+    position:fixed; inset:0; pointer-events:none; opacity:.15; font-size:26px;
+    display:flex; gap:10px; justify-content:center; padding-top:6px
+  }
+  /* Modal */
+  .modal{
+    position:fixed; inset:0; display:none; place-items:center; background:#0008; z-index:50;
+    padding:24px;
+  }
+  .modal.show{display:grid}
+  .sheet{
+    width:min(720px,100%); background:#0b1020; border:1px solid var(--ring); border-radius:22px; padding:18px; box-shadow: var(--shadow)
+  }
+  .sheet h2{margin:0 0 8px 0; font-size:22px}
+  .sheet ol{margin:8px 0 0 18px}
+  .sheet li{margin:6px 0}
+  .sheet .row{justify-content:flex-end}
+  .link{color:#a5b4fc; text-decoration:underline; cursor:pointer}
+</style>
+</head>
+<body>
+<div class="floating-emojis">🐟 🎭 📝 ⏱️ 🎲 🎉</div>
+<div class="wrap">
+  <header>
+    <div class="title">
+      <span class="emoji-splash" aria-hidden="true">🐟</span>
+      Fishbowl Scorekeeper
+      <span class="emoji-splash" aria-hidden="true">🎉</span>
+    </div>
+    <div class="toolbar">
+      <button id="helpBtn" class="ghost" title="Instructions">❓ Help</button>
+      <button id="undoBtn" class="ghost" title="Undo last change">↩︎ Undo</button>
+      <button id="resetBtn" class="danger" title="Reset all data">Reset</button>
+    </div>
+  </header>
+
+  <div class="panel rounds" role="tablist" aria-label="Rounds">
+    <div class="chip" data-round="Taboo" role="tab" tabindex="0">🗣️ Taboo</div>
+    <div class="chip" data-round="Charades" role="tab" tabindex="0">🎭 Charades</div>
+    <div class="chip" data-round="Password" role="tab" tabindex="0">🤫 Password</div>
+    <div class="badge" id="roundNote">Current round: Taboo</div>
+  </div>
+
+  <div class="layout">
+    <section class="panel">
+      <div class="add row" id="addRow">
+        <input id="nameInput" type="text" placeholder="Team name (e.g., Blue Bluffs)" maxlength="24" />
+        <button id="addBtn" class="success">➕ Add Team</button>
+      </div>
+
+      <div id="teams" class="grid" aria-live="polite"></div>
+    </section>
+
+    <aside class="panel leader">
+      <div class="lb-title">
+        <div class="row">
+          <span>🏆 Leaderboard</span>
+        </div>
+        <span class="tiny-note">Auto-sorted</span>
+      </div>
+      <div id="leaderboard" class="lb-list" aria-live="polite"></div>
+    </aside>
+  </div>
+</div>
+
+<!-- Instructions Modal -->
+<div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <div class="sheet">
+    <h2 id="mTitle">How to use 🐟 Fishbowl Scorekeeper</h2>
+    <ol>
+      <li>Tap <strong>➕ Add Team</strong> to create teams.</li>
+      <li>Use <strong>+1 / +5</strong> and <strong>−1 / −5</strong> after each turn. Scores are cumulative.</li>
+      <li>Tap a <strong>round chip</strong> to mark <em>Taboo</em>, <em>Charades</em>, or <em>Password</em>. This is for context only.</li>
+      <li>The <strong>Leaderboard</strong> auto-sorts and medals 🥇🥈🥉 the top three.</li>
+      <li>Tap a team name to <strong>rename</strong>. Press Enter to save.</li>
+      <li><strong>Undo</strong> reverses the last change. <strong>Reset</strong> clears all data.</li>
+      <li>Everything <strong>saves locally</strong> on this device.</li>
+    </ol>
+    <div class="row" style="margin-top:12px">
+      <button id="closeModal" class="success">Let’s play</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const $ = sel => document.querySelector(sel);
+  const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+  const teamsEl = $('#teams');
+  const lbEl = $('#leaderboard');
+  const nameInput = $('#nameInput');
+  const addBtn = $('#addBtn');
+  const undoBtn = $('#undoBtn');
+  const resetBtn = $('#resetBtn');
+  const helpBtn = $('#helpBtn');
+  const modal = $('#modal');
+  const closeModal = $('#closeModal');
+  const roundNote = $('#roundNote');
+  const roundChips = $$('.chip[data-round]');
+
+  const LS_KEY = 'fishbowl_state_v1';
+  const SEEN_KEY = 'fishbowl_seen_v1';
+
+  let state = {
+    round: 'Taboo',
+    teams: [] // {id, name, score}
+  };
+  let history = []; // stack of {type:'score'|'name'|'add'|'remove', payload:{...}}
+
+  // Utilities
+  const uid = () => Math.random().toString(36).slice(2,9);
+  const save = () => localStorage.setItem(LS_KEY, JSON.stringify(state));
+  const load = () => {
+    try{
+      const raw = localStorage.getItem(LS_KEY);
+      if(raw){ state = JSON.parse(raw); }
+    }catch(e){}
+  };
+  const medalFor = (rank) => (rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'');
+  const clampName = s => s.trim().slice(0,24) || 'Team';
+
+  // Render
+  function render(){
+    // Teams grid
+    teamsEl.innerHTML = '';
+    state.teams.forEach(t => {
+      const card = document.createElement('div');
+      card.className = 'team';
+      card.dataset.id = t.id;
+
+      const head = document.createElement('div');
+      head.className = 'team-head';
+
+      const name = document.createElement('div');
+      name.className = 'name';
+      name.contentEditable = 'false';
+      name.textContent = t.name;
+      name.title = 'Click to rename';
+      name.addEventListener('click', () => {
+        name.contentEditable = 'true';
+        name.focus();
+        const sel = window.getSelection(); const range = document.createRange();
+        range.selectNodeContents(name); sel.removeAllRanges(); sel.addRange(range);
+      });
+      name.addEventListener('keydown', (e)=>{
+        if(e.key==='Enter'){ e.preventDefault(); name.blur(); }
+      });
+      name.addEventListener('blur', ()=>{
+        const old = t.name;
+        t.name = clampName(name.textContent);
+        name.textContent = t.name;
+        if(old!==t.name){
+          history.push({type:'name', payload:{id:t.id, from:old, to:t.name}});
+          save(); renderLeaderboard();
+        }
+        name.contentEditable = 'false';
+      });
+
+      const badge = document.createElement('div');
+      badge.className = 'badge';
+      badge.textContent = '🎯 Fishbowl';
+
+      head.append(name, badge);
+
+      const score = document.createElement('div');
+      score.className = 'score';
+      score.innerHTML = `<span>${t.score}</span> <span class="badge">pts</span>`;
+
+      const controls = document.createElement('div');
+      controls.className = 'controls';
+      [['+1',1,'success'],['+5',5,'success'],['−1',-1,'danger'],['−5',-5,'danger']].forEach(([label,delta,cls])=>{
+        const b = document.createElement('button');
+        b.className = cls;
+        b.textContent = label;
+        b.addEventListener('click', ()=> changeScore(t.id, delta));
+        controls.appendChild(b);
+      });
+
+      // tiny custom delta
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.inputMode = 'numeric';
+      input.placeholder = '+ / −';
+      input.style.width = '90px';
+      input.className = 'tiny';
+      input.addEventListener('keydown', (e)=>{
+        if(e.key==='Enter'){
+          const v = parseInt(input.value,10);
+          if(!isNaN(v) && v!==0){ changeScore(t.id, v); input.value=''; }
+        }
+      });
+      const apply = document.createElement('button');
+      apply.className = 'ghost tiny';
+      apply.textContent = 'Apply';
+      apply.addEventListener('click', ()=>{
+        const v = parseInt(input.value,10);
+        if(!isNaN(v) && v!==0){ changeScore(t.id, v); input.value=''; }
+      });
+
+      const remove = document.createElement('button');
+      remove.className = 'ghost tiny';
+      remove.textContent = '🗑️';
+      remove.title = 'Remove team';
+      remove.addEventListener('click', ()=>{
+        if(confirm(`Remove "${t.name}"?`)){
+          history.push({type:'remove', payload:{team: {...t}}});
+          state.teams = state.teams.filter(x=>x.id!==t.id);
+          save(); render(); renderLeaderboard();
+        }
+      });
+
+      controls.append(input, apply, remove);
+
+      card.append(head, score, controls);
+      teamsEl.appendChild(card);
+    });
+
+    renderLeaderboard();
+  }
+
+  function renderLeaderboard(){
+    const sorted = [...state.teams].sort((a,b)=> b.score - a.score || a.name.localeCompare(b.name));
+    lbEl.innerHTML = '';
+    sorted.forEach((t,idx)=>{
+      const row = document.createElement('div');
+      row.className = 'lb-item';
+      const left = document.createElement('div');
+      left.className = 'row';
+      const rank = document.createElement('div');
+      rank.className = 'rank';
+      rank.textContent = (idx+1)+'.';
+      const name = document.createElement('div');
+      name.style.fontWeight = '800';
+      name.textContent = t.name;
+      left.append(rank, name);
+
+      const right = document.createElement('div');
+      right.className = 'row';
+      const medal = document.createElement('div');
+      medal.className = 'medal';
+      medal.textContent = medalFor(idx+1);
+      const pts = document.createElement('div');
+      pts.style.fontWeight = '900';
+      pts.textContent = t.score + ' pts';
+      right.append(medal, pts);
+
+      row.append(left, right);
+      lbEl.appendChild(row);
+    });
+  }
+
+  // Actions
+  function addTeam(name){
+    name = clampName(name || `Team ${state.teams.length+1}`);
+    const t = {id: uid(), name, score: 0};
+    state.teams.push(t);
+    history.push({type:'add', payload:{id:t.id}});
+    save(); render();
+  }
+
+  function changeScore(id, delta){
+    const t = state.teams.find(x=>x.id===id);
+    if(!t) return;
+    const prevLead = leaderId();
+    t.score = (t.score + delta)|0;
+    history.push({type:'score', payload:{id, delta}});
+    save(); render();
+
+    // Simple "lead taken" ping
+    const nowLead = leaderId();
+    if(nowLead && nowLead !== prevLead){
+      flashLeader(nowLead);
+    }
+  }
+
+  function leaderId(){
+    if(state.teams.length===0) return null;
+    const s = [...state.teams].sort((a,b)=> b.score - a.score || a.name.localeCompare(b.name));
+    return s[0].id;
+  }
+
+  function flashLeader(id){
+    const card = teamsEl.querySelector(`[data-id="${id}"]`);
+    if(!card) return;
+    card.animate([{boxShadow:'0 0 0 0 rgba(255,255,255,0)'},{boxShadow:'0 0 0 8px rgba(255,255,255,.2)'}],{duration:300, easing:'ease-out'});
+  }
+
+  function undo(){
+    const last = history.pop();
+    if(!last) return;
+    if(last.type==='score'){
+      const t = state.teams.find(x=>x.id===last.payload.id);
+      if(t){ t.score -= last.payload.delta; }
+    } else if(last.type==='name'){
+      const t = state.teams.find(x=>x.id===last.payload.id);
+      if(t){ t.name = last.payload.from; }
+    } else if(last.type==='add'){
+      state.teams = state.teams.filter(x=>x.id!==last.payload.id);
+    } else if(last.type==='remove'){
+      state.teams.push(last.payload.team);
+    }
+    save(); render();
+  }
+
+  function resetAll(){
+    if(!confirm('Clear all teams and scores?')) return;
+    state = {round: 'Taboo', teams: []};
+    history = [];
+    save(); render(); setRoundUI(state.round);
+  }
+
+  // Round UI
+  function setRoundUI(r){
+    roundChips.forEach(c=> c.classList.toggle('active', c.dataset.round===r));
+    roundNote.textContent = `Current round: ${r}`;
+  }
+
+  // Events
+  addBtn.addEventListener('click', ()=>{
+    if(nameInput.value.trim()===''){ nameInput.focus(); return; }
+    addTeam(nameInput.value); nameInput.value='';
+  });
+  nameInput.addEventListener('keydown', (e)=>{
+    if(e.key==='Enter'){ addBtn.click(); }
+  });
+  undoBtn.addEventListener('click', undo);
+  resetBtn.addEventListener('click', resetAll);
+  helpBtn.addEventListener('click', ()=> modal.classList.add('show'));
+  closeModal.addEventListener('click', ()=> {
+    modal.classList.remove('show');
+    localStorage.setItem(SEEN_KEY,'1');
+  });
+  modal.addEventListener('click', (e)=> { if(e.target===modal) modal.classList.remove('show'); });
+
+  roundChips.forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      state.round = chip.dataset.round;
+      setRoundUI(state.round);
+      save();
+    });
+    chip.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); chip.click(); }});
+  });
+
+  // Init
+  load();
+  setRoundUI(state.round || 'Taboo');
+  render();
+  if(!localStorage.getItem(SEEN_KEY)){ modal.classList.add('show'); }
+
+})();
+</script>
+</body>
+</html>
