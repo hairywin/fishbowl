@@ -7,104 +7,134 @@
 <title>Fishbowl Scorekeeper 🐟🎭</title>
 <style>
   :root{
-    --bg1:#0ea5e9; --bg2:#8b5cf6; --card:#0b1020ee; --ink:#eef2ff; --muted:#a5b4fc;
-    --accent:#22d3ee; --good:#34d399; --bad:#f87171; --ring:#ffffff22; --shadow: 0 10px 30px #0006;
+    --bg1:#0ea5e9; --bg2:#8b5cf6;
+    --card:#0a0f1a;            /* darker for contrast */
+    --card2:#111a33;
+    --ink:#f8fafc;             /* brighter text */
+    --muted:#cbd5e1;           /* brighter small text */
+    --ring:#ffffff33;
+    --shadow: 0 10px 30px #0008;
+    --good:#0f2b1f; --bad:#2b0f12;
+    --accent:#22d3ee;
+    --warn:#ef4444;
   }
   *{box-sizing:border-box}
   html,body{height:100%}
-  html{-webkit-text-size-adjust:100%} /* prevent Safari text auto-zoom */
+  html{-webkit-text-size-adjust:100%}
   body{
-    margin:0; color:var(--ink); font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    margin:0; color:var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
     background: linear-gradient(160deg,var(--bg1),var(--bg2)) fixed; overflow-x:hidden;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) calc(16px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
   }
+  .sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0}
+
   .wrap{max-width:960px; margin:0 auto; padding:16px}
   header{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px}
   .title{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.2px; font-size: clamp(20px, 5vw, 28px)}
   .emoji-splash{filter:drop-shadow(0 6px 10px #0005)}
   .toolbar{display:flex; gap:8px; align-items:center}
+
   button{
     -webkit-tap-highlight-color: transparent;
     border:1px solid transparent; background:var(--card); color:var(--ink);
     padding:10px 12px; border-radius:14px; box-shadow: var(--shadow);
     outline:none; cursor:pointer; font-weight:700; letter-spacing:.2px;
-    touch-action: manipulation; /* no double-tap zoom */
+    touch-action: manipulation;
   }
   button:active{transform:translateY(1px)}
   .ghost{background:transparent; border-color:#ffffff33}
-  .danger{background:#2b0f12; border-color:#000; color:#fecaca}
-  .success{background:#0f2b1f; border-color:#000; color:#bbf7d0}
+  .danger{background:var(--bad); border-color:#000; color:#fecaca}
+  .success{background:var(--good); border-color:#000; color:#bbf7d0}
+  .warning{background:#3b0b0b; border-color:#000; color:#fecaca}
+
   .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+
   .panel{
-    background: linear-gradient(180deg, #0b1020cc, #0b1020f2);
+    background: linear-gradient(180deg, var(--card), var(--card2));
     border:1px solid var(--ring); border-radius:20px; box-shadow: var(--shadow);
     padding:12px;
   }
   .layout{display:grid; grid-template-columns:1fr; gap:14px; align-items:start}
   @media (min-width: 880px){ .layout{grid-template-columns: 1.2fr .8fr} }
+
   .grid{display:grid; gap:12px; margin-top:12px; grid-template-columns: 1fr}
   @media (min-width: 880px){ .grid{grid-template-columns: repeat(2,minmax(0,1fr))} }
+
   .add{display:flex; gap:8px; padding:10px; background:#00000020; border-radius:14px; border:1px dashed #ffffff33}
   input[type="text"], input[type="number"]{
     width:100%; padding:12px 14px; border-radius:12px; border:1px solid #ffffff33; background:#0b1020; color:var(--ink);
-    outline:none; font-weight:700; font-size:16px; /* >=16px prevents iOS zoom */
+    outline:none; font-weight:700; font-size:16px;
   }
+  input::placeholder{color:var(--muted)} /* higher contrast placeholder */
+
   .team{
-    border-radius:18px; padding:12px; border:1px solid var(--ring); background:#101735;
+    border-radius:18px; padding:12px; border:1px solid var(--ring); background:#0e1630;
     position:relative; overflow:hidden;
   }
   .team:before{content:"🎭"; position:absolute; font-size:56px; opacity:.06; right:-6px; top:-10px; transform:rotate(-18deg)}
   .team-head{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px}
   .name{font-size:18px; font-weight:800; letter-spacing:.2px; display:flex; align-items:center; gap:8px}
-  .name[contenteditable="true"]{outline:2px dashed #ffffff33; outline-offset:4px; border-radius:8px; padding:2px 6px}
+  .name[contenteditable="true"]{outline:2px dashed #ffffff66; outline-offset:4px; border-radius:8px; padding:2px 6px; background:#0b1020}
   .score{font-weight:900; font-size: clamp(32px, 8vw, 40px); line-height:1; letter-spacing:.5px; display:flex; align-items:flex-end; gap:8px}
   .badge{font-size:12px; color:var(--muted)}
+
   .controls{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
   .controls button{flex:1 1 70px}
   .controls .tiny{flex:0 0 auto; padding:8px 10px; font-weight:800}
+
   .leader{position:sticky; top:8px}
   .lb-title{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px}
   .lb-list{display:flex; flex-direction:column; gap:8px}
   .lb-item{display:flex; align-items:center; justify-content:space-between; gap:8px; background:#101735; border:1px solid var(--ring); border-radius:14px; padding:12px}
   .rank{font-weight:900; min-width:2.4ch; text-align:center}
   .medal{font-size:20px}
-  .tiny-note{font-size:12px; color:#c7d2fe}
+  .tiny-note{font-size:12px; color:#e2e8f0}
+
   .floating-emojis{position:fixed; inset:0; pointer-events:none; opacity:.15; font-size:26px; display:flex; gap:10px; justify-content:center; padding-top:6px}
+
   /* Modal */
   .modal{position:fixed; inset:0; display:none; place-items:center; background:#0008; z-index:50; padding:24px}
   .modal.show{display:grid}
-  .sheet{width:min(720px,100%); background:#0b1020; border:1px solid var(--ring); border-radius:22px; padding:18px; box-shadow: var(--shadow)}
+  .sheet{width:min(720px,100%); background:#0b1020; border:1px solid var(--ring); border-radius:22px; padding:18px; box-shadow: var(--shadow); position:relative}
   .sheet h2{margin:0 0 8px 0; font-size:22px}
   .sheet ol{margin:8px 0 0 18px}
   .sheet li{margin:6px 0}
+  .close-x{
+    position:absolute; top:10px; right:12px; width:36px; height:36px; border-radius:10px;
+    border:1px solid #ffffff33; background:#09101d; color:#e5e7eb; font-size:20px; line-height:1;
+  }
 </style>
 </head>
 <body>
-<div class="floating-emojis">🐟 🎭 📝 ⏱️ 🎲 🎉</div>
+<div class="floating-emojis" aria-hidden="true">🐟 🎭 📝 ⏱️ 🎲 🎉</div>
 <div class="wrap">
   <header>
-    <div class="title">
+    <div class="title" aria-label="Fishbowl Scorekeeper">
       <span class="emoji-splash" aria-hidden="true">🐟</span>
       Fishbowl Scorekeeper
       <span class="emoji-splash" aria-hidden="true">🎉</span>
     </div>
     <div class="toolbar">
-      <button id="helpBtn" class="ghost" title="Instructions">❓ Help</button>
-      <button id="undoBtn" class="ghost" title="Undo last change">↩︎ Undo</button>
-      <button id="resetBtn" class="danger" title="Reset all data">Reset</button>
+      <button id="helpBtn" class="ghost" title="Show instructions" aria-label="Show instructions">❓ Help</button>
+      <button id="undoBtn" class="ghost" title="Undo last change" aria-label="Undo last change">↩︎ Undo</button>
+      <button id="resetBtn" class="warning" title="Reset all data" aria-label="Reset all data">⚠️ Reset</button>
     </div>
   </header>
 
   <div class="layout">
-    <section class="panel">
+    <section class="panel" aria-labelledby="addTeamsHeading">
+      <h2 id="addTeamsHeading" class="sr-only">Teams</h2>
       <div class="add row" id="addRow">
+        <label for="nameInput" class="sr-only">Team name</label>
         <input id="nameInput" type="text" placeholder="Team name (e.g., Blue Bluffs)" maxlength="24" />
-        <button id="addBtn" class="success">➕ Add Team</button>
+        <button id="addBtn" class="success" title="Add team" aria-label="Add team">➕ Add Team</button>
       </div>
       <div id="teams" class="grid" aria-live="polite"></div>
     </section>
 
-    <aside class="panel leader">
+    <aside class="panel leader" aria-labelledby="leaderboardHeading">
+      <h2 id="leaderboardHeading" class="sr-only">Leaderboard</h2>
       <div class="lb-title">
         <div class="row"><span>🏆 Leaderboard</span></div>
         <span class="tiny-note">Auto-sorted</span>
@@ -117,17 +147,18 @@
 <!-- Instructions Modal -->
 <div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
   <div class="sheet">
+    <button id="closeX" class="close-x" aria-label="Close help" title="Close">×</button>
     <h2 id="mTitle">How to use 🐟 Fishbowl Scorekeeper</h2>
     <ol>
       <li>Tap <strong>➕ Add Team</strong> to create teams.</li>
-      <li>Use <strong>+1 / +5</strong> and <strong>−1 / −5</strong> after each turn. Scores are cumulative.</li>
+      <li>Use the buttons labeled <strong>+1</strong>, <strong>+5</strong>, <strong>−1</strong>, <strong>−5</strong> after each turn.</li>
       <li>The <strong>Leaderboard</strong> auto-sorts and medals 🥇🥈🥉 the top three.</li>
       <li>Tap a team name to <strong>rename</strong>. Press Enter to save.</li>
-      <li><strong>Undo</strong> reverses the last change. <strong>Reset</strong> clears all data.</li>
-      <li>Everything <strong>saves locally</strong> on this device.</li>
+      <li><strong>Undo</strong> reverses the last change. <strong>⚠️ Reset</strong> clears all data on this device.</li>
+      <li>Everything <strong>saves locally</strong> and persists on refresh.</li>
     </ol>
     <div class="row" style="margin-top:12px">
-      <button id="closeModal" class="success">Let’s play</button>
+      <button id="closeModal" class="success" aria-label="Close and start">Let’s play</button>
     </div>
   </div>
 </div>
@@ -146,6 +177,7 @@
   const helpBtn = $('#helpBtn');
   const modal = $('#modal');
   const closeModal = $('#closeModal');
+  const closeX = $('#closeX');
 
   const LS_KEY = 'fishbowl_state_v1';
   const SEEN_KEY = 'fishbowl_seen_v1';
@@ -179,6 +211,8 @@
       name.contentEditable = 'false';
       name.textContent = t.name;
       name.title = 'Click to rename';
+      name.setAttribute('role','textbox');
+      name.setAttribute('aria-label', `Team name ${t.name}. Click to rename`);
       name.addEventListener('click', () => {
         name.contentEditable = 'true';
         name.focus();
@@ -187,6 +221,7 @@
       });
       name.addEventListener('keydown', (e)=>{
         if(e.key==='Enter'){ e.preventDefault(); name.blur(); }
+        if(e.key==='Escape'){ e.preventDefault(); name.textContent = t.name; name.blur(); }
       });
       name.addEventListener('blur', ()=>{
         const old = t.name;
@@ -207,44 +242,72 @@
 
       const score = document.createElement('div');
       score.className = 'score';
-      score.innerHTML = `<span>${t.score}</span> <span class="badge">pts</span>`;
+      score.innerHTML = `<span aria-live="polite">${t.score}</span> <span class="badge">pts</span>`;
 
       const controls = document.createElement('div');
       controls.className = 'controls';
-      [['+1',1,'success'],['+5',5,'success'],['−1',-1,'danger'],['−5',-5,'danger']].forEach(([label,delta,cls])=>{
+
+      // Primary score buttons with text + tooltips
+      [
+        {label:'+1',  delta:1,  cls:'success', tip:'Add 1 point'},
+        {label:'+5',  delta:5,  cls:'success', tip:'Add 5 points'},
+        {label:'−1', delta:-1, cls:'danger',  tip:'Subtract 1 point'},
+        {label:'−5', delta:-5, cls:'danger',  tip:'Subtract 5 points'}
+      ].forEach(({label,delta,cls,tip})=>{
         const b = document.createElement('button');
         b.className = cls;
         b.textContent = label;
+        b.title = tip;
+        b.setAttribute('aria-label', `${tip} for ${t.name}`);
         b.addEventListener('click', ()=> changeScore(t.id, delta));
         controls.appendChild(b);
       });
 
+      // Custom +/- input
       const input = document.createElement('input');
       input.type = 'number';
       input.inputMode = 'numeric';
-      input.placeholder = '+ / −';
-      input.style.width = '90px';
+      input.placeholder = 'Custom';
+      input.style.width = '110px';
       input.className = 'tiny';
-      input.addEventListener('keydown', (e)=>{
-        if(e.key==='Enter'){
-          const v = parseInt(input.value,10);
-          if(!isNaN(v) && v!==0){ changeScore(t.id, v); input.value=''; }
-        }
-      });
+      input.title = 'Enter a positive or negative number';
+      input.setAttribute('aria-label', `Custom score change for ${t.name}`);
+
       const apply = document.createElement('button');
       apply.className = 'ghost tiny';
       apply.textContent = 'Apply';
-      apply.addEventListener('click', ()=>{
+      apply.title = 'Apply custom change';
+      apply.setAttribute('aria-label', `Apply custom change for ${t.name}`);
+      apply.style.display = 'none'; // hidden until valid input
+
+      function refreshApplyVisibility(){
         const v = parseInt(input.value,10);
-        if(!isNaN(v) && v!==0){ changeScore(t.id, v); input.value=''; }
+        apply.style.display = (!isNaN(v) && v !== 0) ? 'inline-block' : 'none';
+      }
+
+      input.addEventListener('input', refreshApplyVisibility);
+      input.addEventListener('keydown', (e)=>{
+        if(e.key==='Enter'){
+          const v = parseInt(input.value,10);
+          if(!isNaN(v) && v!==0){ changeScore(t.id, v); input.value=''; refreshApplyVisibility(); }
+        }
+        if(e.key==='Escape'){ input.value=''; refreshApplyVisibility(); }
       });
 
+      apply.addEventListener('click', ()=>{
+        const v = parseInt(input.value,10);
+        if(!isNaN(v) && v!==0){ changeScore(t.id, v); input.value=''; refreshApplyVisibility(); }
+      });
+
+      // Delete button larger with label and tooltip
       const remove = document.createElement('button');
       remove.className = 'ghost tiny';
-      remove.textContent = '🗑️';
-      remove.title = 'Remove team';
+      remove.innerHTML = '🗑️ <span aria-hidden="true">Delete</span>';
+      remove.title = 'Delete team';
+      remove.setAttribute('aria-label', `Delete team ${t.name}`);
+      remove.style.padding = '10px 12px';
       remove.addEventListener('click', ()=>{
-        if(confirm(`Remove "${t.name}"?`)){
+        if(confirm(`Delete team "${t.name}"? This cannot be undone.`)){
           history.push({type:'remove', payload:{team: {...t}}});
           state.teams = state.teams.filter(x=>x.id!==t.id);
           save(); render(); renderLeaderboard();
@@ -252,7 +315,6 @@
       });
 
       controls.append(input, apply, remove);
-
       card.append(head, score, controls);
       teamsEl.appendChild(card);
     });
@@ -266,6 +328,7 @@
     sorted.forEach((t,idx)=>{
       const row = document.createElement('div');
       row.className = 'lb-item';
+
       const left = document.createElement('div');
       left.className = 'row';
       const rank = document.createElement('div');
@@ -320,7 +383,7 @@
     const card = teamsEl.querySelector(`[data-id="${id}"]`);
     if(!card) return;
     card.animate(
-      [{boxShadow:'0 0 0 0 rgba(255,255,255,0)'},{boxShadow:'0 0 0 8px rgba(255,255,255,.2)'}],
+      [{boxShadow:'0 0 0 0 rgba(255,255,255,0)'},{boxShadow:'0 0 0 8px rgba(255,255,255,.25)'}],
       {duration:300, easing:'ease-out'}
     );
   }
@@ -343,12 +406,13 @@
   }
 
   function resetAll(){
-    if(!confirm('Clear all teams and scores?')) return;
+    if(!confirm('Clear ALL teams and scores on this device?')) return;
     state = {teams: []};
     history = [];
     save(); render();
   }
 
+  // Events
   addBtn.addEventListener('click', ()=>{
     if(nameInput.value.trim()===''){ nameInput.focus(); return; }
     addTeam(nameInput.value); nameInput.value='';
@@ -357,12 +421,19 @@
   undoBtn.addEventListener('click', undo);
   resetBtn.addEventListener('click', resetAll);
   helpBtn.addEventListener('click', ()=> modal.classList.add('show'));
-  closeModal?.addEventListener('click', ()=> {
-    modal.classList.remove('show');
-    localStorage.setItem(SEEN_KEY,'1');
-  });
+  closeModal.addEventListener('click', ()=> { modal.classList.remove('show'); localStorage.setItem(SEEN_KEY,'1'); });
+  closeX.addEventListener('click', ()=> { modal.classList.remove('show'); localStorage.setItem(SEEN_KEY,'1'); });
   modal.addEventListener('click', (e)=> { if(e.target===modal) modal.classList.remove('show'); });
 
+  // Close modal with Esc
+  document.addEventListener('keydown', (e)=>{
+    if(e.key==='Escape' && modal.classList.contains('show')){
+      modal.classList.remove('show');
+      localStorage.setItem(SEEN_KEY,'1');
+    }
+  });
+
+  // Init
   load();
   render();
   if(!localStorage.getItem(SEEN_KEY)){ modal.classList.add('show'); }
