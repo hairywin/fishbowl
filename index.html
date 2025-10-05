@@ -8,15 +8,10 @@
 <style>
   :root{
     --bg1:#0ea5e9; --bg2:#8b5cf6;
-    --card:#0a0f1a;            /* darker for contrast */
-    --card2:#111a33;
-    --ink:#f8fafc;             /* brighter text */
-    --muted:#cbd5e1;           /* brighter small text */
-    --ring:#ffffff33;
-    --shadow: 0 10px 30px #0008;
-    --good:#0f2b1f; --bad:#2b0f12;
-    --accent:#22d3ee;
-    --warn:#ef4444;
+    --card:#0a0f1a; --card2:#111a33;
+    --ink:#f8fafc; --muted:#cbd5e1; --ring:#ffffff33; --shadow:0 10px 30px #0008;
+    --good:#0f2b1f; --bad:#2b0f12; --accent:#22d3ee; --warn:#ef4444;
+    --safe-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
   }
   *{box-sizing:border-box}
   html,body{height:100%}
@@ -25,7 +20,7 @@
     margin:0; color:var(--ink);
     font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
     background: linear-gradient(160deg,var(--bg1),var(--bg2)) fixed; overflow-x:hidden;
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) calc(16px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) calc(72px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
   }
   .sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0}
 
@@ -33,7 +28,9 @@
   header{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px}
   .title{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.2px; font-size: clamp(20px, 5vw, 28px)}
   .emoji-splash{filter:drop-shadow(0 6px 10px #0005)}
-  .toolbar{display:flex; gap:8px; align-items:center}
+  .toolbar-top{display:flex; gap:8px; align-items:center}
+  .hide-on-mobile{display:none}
+  @media (min-width: 880px){ .hide-on-mobile{display:flex} }
 
   button{
     -webkit-tap-highlight-color: transparent;
@@ -41,6 +38,7 @@
     padding:10px 12px; border-radius:14px; box-shadow: var(--shadow);
     outline:none; cursor:pointer; font-weight:700; letter-spacing:.2px;
     touch-action: manipulation;
+    min-height:44px; min-width:44px; /* touch target */
   }
   button:active{transform:translateY(1px)}
   .ghost{background:transparent; border-color:#ffffff33}
@@ -48,25 +46,46 @@
   .success{background:var(--good); border-color:#000; color:#bbf7d0}
   .warning{background:#3b0b0b; border-color:#000; color:#fecaca}
 
-  .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
-
   .panel{
     background: linear-gradient(180deg, var(--card), var(--card2));
     border:1px solid var(--ring); border-radius:20px; box-shadow: var(--shadow);
     padding:12px;
   }
-  .layout{display:grid; grid-template-columns:1fr; gap:14px; align-items:start}
-  @media (min-width: 880px){ .layout{grid-template-columns: 1.2fr .8fr} }
 
+  /* Layout:
+     - Mobile: single column. Teams list first, leaderboard below.
+     - Desktop ≥880px: two columns, teams left, leaderboard right. */
+  .layout{
+    display:grid; gap:14px; align-items:start;
+    grid-template-columns: 1fr; grid-template-areas:
+      "teams"
+      "leaderboard";
+  }
+  @media (min-width: 880px){
+    .layout{
+      grid-template-columns: 1.2fr .8fr; grid-template-areas: "teams leaderboard";
+    }
+  }
+  .teams-area{grid-area:teams}
+  .leader-area{grid-area:leaderboard}
+
+  /* Teams list: single column on mobile. Two-up on desktop. Also vertical scroll on mobile. */
   .grid{display:grid; gap:12px; margin-top:12px; grid-template-columns: 1fr}
   @media (min-width: 880px){ .grid{grid-template-columns: repeat(2,minmax(0,1fr))} }
+  /* Mobile scroll container to prevent horizontal scroll */
+  .scroll-vert{
+    max-height: min(65vh, 700px);
+    overflow-y:auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
 
   .add{display:flex; gap:8px; padding:10px; background:#00000020; border-radius:14px; border:1px dashed #ffffff33}
   input[type="text"], input[type="number"]{
     width:100%; padding:12px 14px; border-radius:12px; border:1px solid #ffffff33; background:#0b1020; color:var(--ink);
     outline:none; font-weight:700; font-size:16px;
   }
-  input::placeholder{color:var(--muted)} /* higher contrast placeholder */
+  input::placeholder{color:var(--muted)}
 
   .team{
     border-radius:18px; padding:12px; border:1px solid var(--ring); background:#0e1630;
@@ -79,9 +98,10 @@
   .score{font-weight:900; font-size: clamp(32px, 8vw, 40px); line-height:1; letter-spacing:.5px; display:flex; align-items:flex-end; gap:8px}
   .badge{font-size:12px; color:var(--muted)}
 
-  .controls{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
-  .controls button{flex:1 1 70px}
-  .controls .tiny{flex:0 0 auto; padding:8px 10px; font-weight:800}
+  .controls{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px}
+  .controls button{flex:1 1 100px; padding:12px 14px; border-radius:12px}
+  .controls .tiny{flex:0 0 auto; padding:10px 12px; font-weight:800}
+  .controls .inline-group{display:flex; gap:8px; align-items:center}
 
   .leader{position:sticky; top:8px}
   .lb-title{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px}
@@ -93,8 +113,26 @@
 
   .floating-emojis{position:fixed; inset:0; pointer-events:none; opacity:.15; font-size:26px; display:flex; gap:10px; justify-content:center; padding-top:6px}
 
+  /* Bottom persistent toolbar on mobile */
+  .sticky-actions{
+    position:fixed; left:0; right:0; bottom:0; z-index:60;
+    padding:8px 12px var(--safe-bottom) 12px;
+    background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.35) 10%, rgba(0,0,0,.55));
+    display:flex; justify-content:center;
+  }
+  .action-bar{
+    width:min(960px, calc(100% - 24px));
+    display:flex; gap:10px; align-items:center; justify-content:space-between;
+    background: linear-gradient(180deg, var(--card), var(--card2));
+    border:1px solid var(--ring); border-radius:16px; padding:8px 10px; box-shadow: var(--shadow);
+  }
+  .action-bar button{flex:1 1 33%; font-size:16px}
+  @media (min-width: 880px){
+    .sticky-actions{display:none}
+  }
+
   /* Modal */
-  .modal{position:fixed; inset:0; display:none; place-items:center; background:#0008; z-index:50; padding:24px}
+  .modal{position:fixed; inset:0; display:none; place-items:center; background:#0008; z-index:70; padding:24px}
   .modal.show{display:grid}
   .sheet{width:min(720px,100%); background:#0b1020; border:1px solid var(--ring); border-radius:22px; padding:18px; box-shadow: var(--shadow); position:relative}
   .sheet h2{margin:0 0 8px 0; font-size:22px}
@@ -108,6 +146,7 @@
 </head>
 <body>
 <div class="floating-emojis" aria-hidden="true">🐟 🎭 📝 ⏱️ 🎲 🎉</div>
+
 <div class="wrap">
   <header>
     <div class="title" aria-label="Fishbowl Scorekeeper">
@@ -115,25 +154,33 @@
       Fishbowl Scorekeeper
       <span class="emoji-splash" aria-hidden="true">🎉</span>
     </div>
-    <div class="toolbar">
-      <button id="helpBtn" class="ghost" title="Show instructions" aria-label="Show instructions">❓ Help</button>
-      <button id="undoBtn" class="ghost" title="Undo last change" aria-label="Undo last change">↩︎ Undo</button>
-      <button id="resetBtn" class="warning" title="Reset all data" aria-label="Reset all data">⚠️ Reset</button>
+    <!-- top-right controls stay on desktop; hidden on mobile due to bottom bar -->
+    <div class="toolbar-top hide-on-mobile">
+      <button id="helpBtnTop" class="ghost" title="Show instructions" aria-label="Show instructions">❓ Help</button>
+      <button id="undoBtnTop" class="ghost" title="Undo last change" aria-label="Undo last change">↩︎ Undo</button>
+      <button id="resetBtnTop" class="warning" title="Reset all data" aria-label="Reset all data">⚠️ Reset</button>
     </div>
   </header>
 
   <div class="layout">
-    <section class="panel" aria-labelledby="addTeamsHeading">
+    <!-- Teams column -->
+    <section class="panel teams-area" aria-labelledby="addTeamsHeading">
       <h2 id="addTeamsHeading" class="sr-only">Teams</h2>
-      <div class="add row" id="addRow">
+
+      <div class="add" id="addRow">
         <label for="nameInput" class="sr-only">Team name</label>
         <input id="nameInput" type="text" placeholder="Team name (e.g., Blue Bluffs)" maxlength="24" />
         <button id="addBtn" class="success" title="Add team" aria-label="Add team">➕ Add Team</button>
       </div>
-      <div id="teams" class="grid" aria-live="polite"></div>
+
+      <!-- Scrollable list on mobile to avoid horizontal scrolling -->
+      <div class="scroll-vert">
+        <div id="teams" class="grid" aria-live="polite"></div>
+      </div>
     </section>
 
-    <aside class="panel leader" aria-labelledby="leaderboardHeading">
+    <!-- Leaderboard column -->
+    <aside class="panel leader-area leader" aria-labelledby="leaderboardHeading">
       <h2 id="leaderboardHeading" class="sr-only">Leaderboard</h2>
       <div class="lb-title">
         <div class="row"><span>🏆 Leaderboard</span></div>
@@ -144,6 +191,15 @@
   </div>
 </div>
 
+<!-- Bottom persistent actions for mobile -->
+<div class="sticky-actions" role="region" aria-label="Quick actions">
+  <div class="action-bar">
+    <button id="helpBtn" class="ghost" title="Show instructions" aria-label="Show instructions">❓ Help</button>
+    <button id="undoBtn" class="ghost" title="Undo last change" aria-label="Undo last change">↩︎ Undo</button>
+    <button id="resetBtn" class="warning" title="Reset all data" aria-label="Reset all data">⚠️ Reset</button>
+  </div>
+</div>
+
 <!-- Instructions Modal -->
 <div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
   <div class="sheet">
@@ -151,10 +207,10 @@
     <h2 id="mTitle">How to use 🐟 Fishbowl Scorekeeper</h2>
     <ol>
       <li>Tap <strong>➕ Add Team</strong> to create teams.</li>
-      <li>Use the buttons labeled <strong>+1</strong>, <strong>+5</strong>, <strong>−1</strong>, <strong>−5</strong> after each turn.</li>
+      <li>Use <strong>+1</strong>, <strong>+5</strong>, <strong>−1</strong>, <strong>−5</strong> after each turn.</li>
       <li>The <strong>Leaderboard</strong> auto-sorts and medals 🥇🥈🥉 the top three.</li>
       <li>Tap a team name to <strong>rename</strong>. Press Enter to save.</li>
-      <li><strong>Undo</strong> reverses the last change. <strong>⚠️ Reset</strong> clears all data on this device.</li>
+      <li><strong>↩︎ Undo</strong> reverses the last change. <strong>⚠️ Reset</strong> clears all data on this device.</li>
       <li>Everything <strong>saves locally</strong> and persists on refresh.</li>
     </ol>
     <div class="row" style="margin-top:12px">
@@ -166,15 +222,22 @@
 <script>
 (function(){
   const $ = sel => document.querySelector(sel);
-  const $$ = sel => Array.from(document.querySelectorAll(sel));
 
   const teamsEl = $('#teams');
   const lbEl = $('#leaderboard');
   const nameInput = $('#nameInput');
   const addBtn = $('#addBtn');
+
+  // Top toolbar (desktop)
+  const undoBtnTop = $('#undoBtnTop');
+  const resetBtnTop = $('#resetBtnTop');
+  const helpBtnTop = $('#helpBtnTop');
+
+  // Bottom toolbar (mobile)
   const undoBtn = $('#undoBtn');
   const resetBtn = $('#resetBtn');
   const helpBtn = $('#helpBtn');
+
   const modal = $('#modal');
   const closeModal = $('#closeModal');
   const closeX = $('#closeX');
@@ -247,7 +310,7 @@
       const controls = document.createElement('div');
       controls.className = 'controls';
 
-      // Primary score buttons with text + tooltips
+      // Primary score buttons
       [
         {label:'+1',  delta:1,  cls:'success', tip:'Add 1 point'},
         {label:'+5',  delta:5,  cls:'success', tip:'Add 5 points'},
@@ -263,12 +326,12 @@
         controls.appendChild(b);
       });
 
-      // Custom +/- input
+      // Custom +/- input with conditional Apply
       const input = document.createElement('input');
       input.type = 'number';
       input.inputMode = 'numeric';
       input.placeholder = 'Custom';
-      input.style.width = '110px';
+      input.style.width = '120px';
       input.className = 'tiny';
       input.title = 'Enter a positive or negative number';
       input.setAttribute('aria-label', `Custom score change for ${t.name}`);
@@ -278,13 +341,12 @@
       apply.textContent = 'Apply';
       apply.title = 'Apply custom change';
       apply.setAttribute('aria-label', `Apply custom change for ${t.name}`);
-      apply.style.display = 'none'; // hidden until valid input
+      apply.style.display = 'none';
 
       function refreshApplyVisibility(){
         const v = parseInt(input.value,10);
         apply.style.display = (!isNaN(v) && v !== 0) ? 'inline-block' : 'none';
       }
-
       input.addEventListener('input', refreshApplyVisibility);
       input.addEventListener('keydown', (e)=>{
         if(e.key==='Enter'){
@@ -293,13 +355,11 @@
         }
         if(e.key==='Escape'){ input.value=''; refreshApplyVisibility(); }
       });
-
       apply.addEventListener('click', ()=>{
         const v = parseInt(input.value,10);
         if(!isNaN(v) && v!==0){ changeScore(t.id, v); input.value=''; refreshApplyVisibility(); }
       });
 
-      // Delete button larger with label and tooltip
       const remove = document.createElement('button');
       remove.className = 'ghost tiny';
       remove.innerHTML = '🗑️ <span aria-hidden="true">Delete</span>';
@@ -314,7 +374,11 @@
         }
       });
 
-      controls.append(input, apply, remove);
+      const customGroup = document.createElement('div');
+      customGroup.className = 'inline-group';
+      customGroup.append(input, apply, remove);
+
+      controls.append(customGroup);
       card.append(head, score, controls);
       teamsEl.appendChild(card);
     });
@@ -330,7 +394,7 @@
       row.className = 'lb-item';
 
       const left = document.createElement('div');
-      left.className = 'row';
+      left.style.display='flex'; left.style.gap='8px'; left.style.alignItems='center';
       const rank = document.createElement('div');
       rank.className = 'rank';
       rank.textContent = (idx+1)+'.';
@@ -340,7 +404,7 @@
       left.append(rank, name);
 
       const right = document.createElement('div');
-      right.className = 'row';
+      right.style.display='flex'; right.style.gap='8px'; right.style.alignItems='center';
       const medal = document.createElement('div');
       medal.className = 'medal';
       medal.textContent = medalFor(idx+1);
@@ -412,28 +476,31 @@
     save(); render();
   }
 
-  // Events
-  addBtn.addEventListener('click', ()=>{
+  // Shared wiring for top and bottom toolbars
+  function bind(el, event, fn){ if(el) el.addEventListener(event, fn); }
+
+  bind(addBtn, 'click', ()=>{
     if(nameInput.value.trim()===''){ nameInput.focus(); return; }
     addTeam(nameInput.value); nameInput.value='';
   });
-  nameInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ addBtn.click(); }});
-  undoBtn.addEventListener('click', undo);
-  resetBtn.addEventListener('click', resetAll);
-  helpBtn.addEventListener('click', ()=> modal.classList.add('show'));
-  closeModal.addEventListener('click', ()=> { modal.classList.remove('show'); localStorage.setItem(SEEN_KEY,'1'); });
-  closeX.addEventListener('click', ()=> { modal.classList.remove('show'); localStorage.setItem(SEEN_KEY,'1'); });
-  modal.addEventListener('click', (e)=> { if(e.target===modal) modal.classList.remove('show'); });
+  bind(nameInput, 'keydown', (e)=>{ if(e.key==='Enter'){ addBtn.click(); }});
 
-  // Close modal with Esc
+  bind(undoBtnTop, 'click', undo);  bind(undoBtn, 'click', undo);
+  bind(resetBtnTop, 'click', resetAll);  bind(resetBtn, 'click', resetAll);
+
+  const openHelp = ()=> modal.classList.add('show');
+  bind(helpBtnTop, 'click', openHelp); bind(helpBtn, 'click', openHelp);
+
+  bind(closeModal, 'click', ()=> { modal.classList.remove('show'); localStorage.setItem(SEEN_KEY,'1'); });
+  bind(closeX, 'click', ()=> { modal.classList.remove('show'); localStorage.setItem(SEEN_KEY,'1'); });
+  bind(modal, 'click', (e)=> { if(e.target===modal) modal.classList.remove('show'); });
+
   document.addEventListener('keydown', (e)=>{
     if(e.key==='Escape' && modal.classList.contains('show')){
-      modal.classList.remove('show');
-      localStorage.setItem(SEEN_KEY,'1');
+      modal.classList.remove('show'); localStorage.setItem(SEEN_KEY,'1');
     }
   });
 
-  // Init
   load();
   render();
   if(!localStorage.getItem(SEEN_KEY)){ modal.classList.add('show'); }
